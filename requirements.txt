@@ -1,0 +1,25 @@
+# Audio
+sounddevice
+soundfile
+numpy
+
+# Keyboard
+pynput
+
+# STT - SenseVoice via FunASR
+funasr
+modelscope
+
+# LLM - Ollama OpenAI-compatible client
+openai
+
+# TTS - CosyVoice 2
+# CosyVoice 2 需要从源码安装，见下方说明:
+#   git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git
+#   cd CosyVoice
+#   pip install -e .
+
+# PyTorch (根据你的 CUDA 版本选择)
+# pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+torch
+torchaudio
