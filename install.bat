@@ -8,7 +8,7 @@ echo.
 set "CONDA_DIR=%USERPROFILE%\miniconda3"
 set "ENV_NAME=voice-chat"
 set "INSTALLER=%USERPROFILE%\Miniconda3-latest-Windows-x86_64.exe"
-set "CONDA_EXE=%USERPROFILE%\miniconda3\Scripts\conda.exe"
+set "CONDA_EXE=%CONDA_DIR%\Scripts\conda.exe"
 
 REM ========== 1. Check / Install Miniconda ==========
 if exist "%CONDA_EXE%" (
@@ -23,6 +23,12 @@ if %errorlevel% equ 0 (
     goto conda_ready
 )
 
+REM If directory exists but conda.exe missing, remove broken install
+if exist "%CONDA_DIR%" (
+    echo [1/5] Found broken Miniconda install, cleaning up...
+    rmdir /s /q "%CONDA_DIR%"
+)
+
 echo [1/5] Downloading Miniconda from tsinghua mirror...
 curl -L -o "%INSTALLER%" https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda3-latest-Windows-x86_64.exe
 if %errorlevel% neq 0 (
@@ -33,6 +39,13 @@ if %errorlevel% neq 0 (
 echo Installing Miniconda to %CONDA_DIR% ...
 start /wait "" "%INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /S /D=%CONDA_DIR%
 del "%INSTALLER%"
+
+REM Verify install succeeded
+if not exist "%CONDA_EXE%" (
+    echo [ERROR] Miniconda install failed, conda.exe not found
+    pause
+    exit /b 1
+)
 echo Miniconda installed
 
 :conda_ready
@@ -40,27 +53,25 @@ REM Add conda to PATH for this session
 set "PATH=%CONDA_DIR%;%CONDA_DIR%\Scripts;%CONDA_DIR%\Library\bin;%CONDA_DIR%\condabin;%PATH%"
 
 REM Add conda to user PATH permanently if missing
-reg query "HKCU\Environment" /v Path >nul 2>&1
-if %errorlevel% equ 0 (
-    reg query "HKCU\Environment" /v Path | findstr /I /C:"miniconda3" >nul 2>&1
-    if %errorlevel% neq 0 (
-        echo Adding conda to user PATH permanently...
-        for /f "tokens=2,*" %%A in ('reg query "HKCU\Environment" /v Path') do (
+reg query "HKCU\Environment" /v Path 2>nul | findstr /I /C:"miniconda3" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo Adding conda to user PATH permanently...
+    reg query "HKCU\Environment" /v Path >nul 2>&1
+    if %errorlevel% equ 0 (
+        for /f "tokens=2,*" %%A in ('reg query "HKCU\Environment" /v Path 2^>nul') do (
             reg add "HKCU\Environment" /v Path /t REG_EXPAND_SZ /d "%%B;%CONDA_DIR%;%CONDA_DIR%\Scripts;%CONDA_DIR%\condabin" /f
         )
-        echo Done. New terminals will have conda available.
+    ) else (
+        reg add "HKCU\Environment" /v Path /t REG_EXPAND_SZ /d "%CONDA_DIR%;%CONDA_DIR%\Scripts;%CONDA_DIR%\condabin" /f
     )
-) else (
-    echo Adding conda to user PATH permanently...
-    reg add "HKCU\Environment" /v Path /t REG_EXPAND_SZ /d "%CONDA_DIR%;%CONDA_DIR%\Scripts;%CONDA_DIR%\condabin" /f
-    echo Done.
+    echo Conda added to user PATH.
 )
 
 REM Verify conda works
 echo Verifying conda...
 "%CONDA_EXE%" --version
 if %errorlevel% neq 0 (
-    echo [ERROR] conda not working, check installation
+    echo [ERROR] conda not working
     pause
     exit /b 1
 )
