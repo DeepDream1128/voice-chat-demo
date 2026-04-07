@@ -99,8 +99,9 @@ def speech_to_text(stt_model, audio_data):
     try:
         result = stt_model.generate(input=tmp.name)
         text = result[0]["text"] if result else ""
-        for tag in []:
-            text = text.replace(tag, "")
+        # Paraformer 输出中文字之间有空格，去掉
+        import re
+        text = re.sub(r'(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])', '', text)
         return text.strip()
     finally:
         os.unlink(tmp.name)
