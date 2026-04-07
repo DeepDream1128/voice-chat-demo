@@ -47,6 +47,7 @@ cd /d "%COSY_DIR%"
 
 REM Install setuptools first (needed by some deps like openai-whisper)
 pip install "setuptools<81" -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install hyperpyyaml -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 REM Install requirements
 if exist "requirements.txt" (

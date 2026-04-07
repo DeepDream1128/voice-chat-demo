@@ -20,7 +20,7 @@ SAMPLE_RATE = 16000
 CHANNELS = 1
 OLLAMA_BASE_URL = "http://localhost:11434/v1"
 OLLAMA_MODEL = "deepseek-r1:1.5b"
-COSYVOICE_MODEL = "CosyVoice2-0.5B"
+COSYVOICE_MODEL = "iic/CosyVoice-300M-SFT"
 SENSEVOICE_MODEL = "iic/SenseVoiceSmall"
 TTS_SPEAKER = "中文女"  # CosyVoice 2 内置说话人
 
