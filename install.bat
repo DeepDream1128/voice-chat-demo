@@ -32,7 +32,7 @@ if !errorlevel! neq 0 (
     exit /b 1
 )
 echo Installing Miniconda to !CONDA_DIR! ...
-start /wait "" "!INSTALLER!" /InstallationType=JustMe /RegisterPython=0 /AddToPath=0 /S /D=!CONDA_DIR!
+start /wait "" "!INSTALLER!" /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /S /D=!CONDA_DIR!
 del "!INSTALLER!"
 echo Miniconda installed
 set "CONDA_EXE=!CONDA_DIR!\Scripts\conda.exe"
