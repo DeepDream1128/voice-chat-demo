@@ -3,7 +3,7 @@
 这个项目实现了一个完全本地运行的语音对话系统，集成了 STT (SenseVoice)、LLM (DeepSeek via Ollama) 和 TTS (CosyVoice 2)。
 
 ## 环境准备
-1. **Python**: 建议使用 Python 3.10+。
+1. **Python**: 需要 Python 3.11（PyTorch 暂不支持 3.13+，3.11 兼容性最好）。
 2. **CUDA**: 确保已安装对应的 CUDA Toolkit (建议 11.8+ 或 12.x)。
 3. **系统依赖**:
    - 安装 PortAudio (用于 sounddevice 录音):
@@ -15,9 +15,20 @@
 
 ## 组件安装与配置
 
-### 1. 安装 Python 依赖
+### 1. 一键安装（Windows 推荐）
+双击运行 `install.bat`，会自动：
+- 用 Python 3.11 创建 venv
+- 安装 PyTorch (CUDA 12.1)
+- 安装所有依赖
+- editdistance 失败时自动 fallback 到 editdistance-s
+
+或者手动安装：
 ```bash
+py -3.11 -m venv venv
+venv\Scripts\activate.bat
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
 pip install -r requirements.txt
+pip install editdistance || pip install editdistance-s
 ```
 
 ### 2. Ollama & DeepSeek

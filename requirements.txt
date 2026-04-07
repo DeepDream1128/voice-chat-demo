@@ -19,7 +19,8 @@ openai
 #   cd CosyVoice
 #   pip install -e .
 
-# PyTorch (根据你的 CUDA 版本选择)
-# pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
-torch
-torchaudio
+# PyTorch - 通过 install.bat 单独安装 (CUDA 12.1)
+# 不在此文件中列出 torch/torchaudio，避免从默认源安装失败
+
+# editdistance - 通过 install.bat 处理 fallback 逻辑
+# 如果 editdistance 编译失败，会自动安装 editdistance-s 替代
