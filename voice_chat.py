@@ -40,12 +40,16 @@ def init_stt():
 
 
 def init_tts():
-    """初始化 CosyVoice 2 TTS 模型"""
-    print("[初始化] 加载 CosyVoice 2 模型...")
-    # CosyVoice 需要从源码安装后 import
-    from cosyvoice import CosyVoice2
-    tts = CosyVoice2(COSYVOICE_MODEL, load_jit=False, load_trt=False)
-    print("[初始化] CosyVoice 2 加载完成")
+    """初始化 CosyVoice TTS 模型"""
+    print("[初始化] 加载 CosyVoice 模型...")
+    try:
+        from cosyvoice import CosyVoice2
+        tts = CosyVoice2(COSYVOICE_MODEL, load_jit=False, load_trt=False)
+        print("[初始化] CosyVoice 2 加载完成")
+    except ImportError:
+        from cosyvoice.cli.cosyvoice import CosyVoice
+        tts = CosyVoice(COSYVOICE_MODEL)
+        print("[初始化] CosyVoice (v1) 加载完成")
     return tts
 
 
