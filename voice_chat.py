@@ -20,7 +20,7 @@ SAMPLE_RATE = 16000
 CHANNELS = 1
 OLLAMA_BASE_URL = "http://localhost:11434/v1"
 OLLAMA_MODEL = "deepseek-r1:1.5b"
-SENSEVOICE_MODEL = "iic/SenseVoiceSmall"
+STT_MODEL = "iic/paraformer-zh"
 TTS_SPEAKER = "中文女"
 
 # CosyVoice 模型路径（会自动从 ModelScope 下载）
@@ -36,11 +36,11 @@ lock = threading.Lock()
 
 
 def init_stt():
-    """初始化 SenseVoice STT 模型"""
-    print("[初始化] 加载 SenseVoice 模型...")
+    """初始化 Paraformer STT 模型"""
+    print("[初始化] 加载 Paraformer 模型...")
     from funasr import AutoModel
-    model = AutoModel(model=SENSEVOICE_MODEL, trust_remote_code=True)
-    print("[初始化] SenseVoice 加载完成")
+    model = AutoModel(model=STT_MODEL)
+    print("[初始化] Paraformer 加载完成")
     return model
 
 
@@ -88,10 +88,7 @@ def speech_to_text(stt_model, audio_data):
     try:
         result = stt_model.generate(input=tmp.name)
         text = result[0]["text"] if result else ""
-        for tag in ["<|zh|>", "<|en|>", "<|yue|>", "<|ja|>", "<|ko|>",
-                     "<|nospeech|>", "<|HAPPY|>", "<|SAD|>", "<|ANGRY|>",
-                     "<|NEUTRAL|>", "<|BGM|>", "<|Speech|>", "<|Applause|>",
-                     "<|Laughter|>", "<|NOISE|>", "<|woitn|>", "<|EMO_UNKNOWN|>"]:
+        for tag in []:
             text = text.replace(tag, "")
         return text.strip()
     finally:
