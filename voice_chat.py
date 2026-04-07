@@ -2,7 +2,7 @@
 本地语音对话系统 Demo
 STT: SenseVoice (FunASR)
 LLM: Ollama (DeepSeek 本地模型)
-TTS: CosyVoice 2
+TTS: CosyVoice (自动适配 v1/v2/v3)
 """
 
 import os
@@ -20,9 +20,14 @@ SAMPLE_RATE = 16000
 CHANNELS = 1
 OLLAMA_BASE_URL = "http://localhost:11434/v1"
 OLLAMA_MODEL = "deepseek-r1:1.5b"
-COSYVOICE_MODEL = "iic/CosyVoice-300M-SFT"
 SENSEVOICE_MODEL = "iic/SenseVoiceSmall"
-TTS_SPEAKER = "中文女"  # CosyVoice 2 内置说话人
+TTS_SPEAKER = "中文女"
+
+# CosyVoice 模型路径（会自动从 ModelScope 下载）
+COSYVOICE_MODEL = "iic/CosyVoice-300M-SFT"
+
+# CosyVoice 源码路径（相对于本脚本）
+COSYVOICE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "CosyVoice")
 
 # ============ 全局状态 ============
 is_recording = False
@@ -40,16 +45,22 @@ def init_stt():
 
 
 def init_tts():
-    """初始化 CosyVoice TTS 模型"""
+    """初始化 CosyVoice TTS 模型（官方推荐方式）"""
     print("[初始化] 加载 CosyVoice 模型...")
-    try:
-        from cosyvoice import CosyVoice2
-        tts = CosyVoice2(COSYVOICE_MODEL, load_jit=False, load_trt=False)
-        print("[初始化] CosyVoice 2 加载完成")
-    except ImportError:
-        from cosyvoice.cli.cosyvoice import CosyVoice
-        tts = CosyVoice(COSYVOICE_MODEL)
-        print("[初始化] CosyVoice (v1) 加载完成")
+
+    # 添加 CosyVoice 源码和 third_party 到 Python 路径
+    matcha_path = os.path.join(COSYVOICE_ROOT, "third_party", "Matcha-TTS")
+    if COSYVOICE_ROOT not in sys.path:
+        sys.path.insert(0, COSYVOICE_ROOT)
+    if os.path.isdir(matcha_path) and matcha_path not in sys.path:
+        sys.path.insert(0, matcha_path)
+
+    from cosyvoice.cli.cosyvoice import AutoModel
+    tts = AutoModel(model_dir=COSYVOICE_MODEL)
+
+    # 打印可用说话人
+    spks = tts.list_available_spks()
+    print(f"[初始化] CosyVoice 加载完成，可用说话人: {spks}")
     return tts
 
 
@@ -70,7 +81,6 @@ def record_callback(indata, frames, time_info, status):
 
 def speech_to_text(stt_model, audio_data):
     """语音转文字"""
-    # 保存临时 wav 文件
     tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
     sf.write(tmp.name, audio_data, SAMPLE_RATE)
     tmp.close()
@@ -78,7 +88,6 @@ def speech_to_text(stt_model, audio_data):
     try:
         result = stt_model.generate(input=tmp.name)
         text = result[0]["text"] if result else ""
-        # SenseVoice 输出可能带语言/情感标签，清理一下
         for tag in ["<|zh|>", "<|en|>", "<|yue|>", "<|ja|>", "<|ko|>",
                      "<|nospeech|>", "<|HAPPY|>", "<|SAD|>", "<|ANGRY|>",
                      "<|NEUTRAL|>", "<|BGM|>", "<|Speech|>", "<|Applause|>",
@@ -93,7 +102,6 @@ def chat_with_llm(llm_client, user_text, history):
     """调用本地 LLM 生成回答"""
     history.append({"role": "user", "content": user_text})
 
-    # 只保留最近 10 轮对话
     messages = [{"role": "system", "content": "你是一个友好的中文语音助手，回答简洁明了。"}]
     messages.extend(history[-20:])
 
@@ -108,9 +116,8 @@ def chat_with_llm(llm_client, user_text, history):
 
 def text_to_speech_and_play(tts_model, text):
     """文字转语音并播放"""
-    # CosyVoice 2 合成
     output_audio = None
-    for chunk in tts_model.inference_sft(text, TTS_SPEAKER):
+    for chunk in tts_model.inference_sft(text, TTS_SPEAKER, stream=False):
         piece = chunk["tts_speech"].numpy()
         if output_audio is None:
             output_audio = piece
@@ -118,8 +125,7 @@ def text_to_speech_and_play(tts_model, text):
             output_audio = np.concatenate([output_audio, piece])
 
     if output_audio is not None:
-        # CosyVoice 2 输出采样率通常为 22050
-        sd.play(output_audio.flatten(), samplerate=22050)
+        sd.play(output_audio.flatten(), samplerate=tts_model.sample_rate)
         sd.wait()
 
 
@@ -139,7 +145,6 @@ def main():
 
     print("\n[就绪] 按住空格键开始说话...\n")
 
-    # 启动录音流（持续运行，通过 is_recording 控制是否采集）
     stream = sd.InputStream(
         samplerate=SAMPLE_RATE,
         channels=CHANNELS,
@@ -148,7 +153,6 @@ def main():
     )
     stream.start()
 
-    # 键盘监听
     global is_recording, audio_chunks
 
     def on_press(key):
@@ -165,14 +169,12 @@ def main():
             is_recording = False
             print("⏹  录音结束，处理中...")
 
-            # 拼接音频
             with lock:
                 if not audio_chunks:
                     print("[提示] 没有录到声音\n")
                     return
                 audio_data = np.concatenate(audio_chunks, axis=0)
 
-            # STT
             print("📝 语音识别中...")
             user_text = speech_to_text(stt_model, audio_data)
             if not user_text:
@@ -180,12 +182,10 @@ def main():
                 return
             print(f"👤 你说: {user_text}")
 
-            # LLM
             print("🤖 思考中...")
             reply = chat_with_llm(llm_client, user_text, history)
             print(f"🤖 回答: {reply}")
 
-            # TTS + 播放
             print("🔊 语音合成播放中...")
             text_to_speech_and_play(tts_model, reply)
             print()
@@ -195,7 +195,7 @@ def main():
             print("\n👋 再见！")
             stream.stop()
             stream.close()
-            return False  # 停止监听
+            return False
 
     with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
         listener.join()
