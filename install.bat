@@ -84,6 +84,13 @@ echo Setting conda mirror...
 "%CONDA_EXE%" config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
 "%CONDA_EXE%" config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free
 "%CONDA_EXE%" config --set show_channel_urls yes
+"%CONDA_EXE%" config --remove channels defaults 2>nul
+
+REM Accept conda TOS for default channels (required by newer Miniconda)
+echo Accepting conda Terms of Service...
+"%CONDA_EXE%" tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>nul
+"%CONDA_EXE%" tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>nul
+"%CONDA_EXE%" tos accept --override-channels --channel https://repo.anaconda.com/pkgs/msys2 2>nul
 
 REM ========== 2. Create Python 3.11 conda env ==========
 echo [2/5] Creating conda env (%ENV_NAME%, Python 3.11)...
