@@ -19,7 +19,7 @@ from openai import OpenAI
 SAMPLE_RATE = 16000
 CHANNELS = 1
 OLLAMA_BASE_URL = "http://localhost:11434/v1"
-OLLAMA_MODEL = "deepseek-r1:1.5b"
+OLLAMA_MODEL = "deepseek-r1:7b"
 STT_MODEL = "iic/paraformer-zh"
 TTS_SPEAKER = "中文女"
 
