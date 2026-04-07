@@ -14,6 +14,7 @@ import sounddevice as sd
 import soundfile as sf
 from pynput import keyboard
 from openai import OpenAI
+from datetime import datetime
 
 # ============ 配置 ============
 SAMPLE_RATE = 16000
@@ -28,6 +29,16 @@ COSYVOICE_MODEL = "iic/CosyVoice-300M-SFT"
 
 # CosyVoice 源码路径（相对于本脚本）
 COSYVOICE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "CosyVoice")
+
+# 日志文件
+LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "chat_log.txt")
+
+
+def log_chat(role, text):
+    """记录对话日志"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(f"[{timestamp}] {role}: {text}\n")
 
 # ============ 全局状态 ============
 is_recording = False
@@ -98,6 +109,7 @@ def speech_to_text(stt_model, audio_data):
 def chat_with_llm(llm_client, user_text, history):
     """调用本地 LLM 生成回答"""
     history.append({"role": "user", "content": user_text})
+    log_chat("用户", user_text)
 
     messages = [{"role": "system", "content": "你是一个友好的中文语音助手，回答简洁明了。"}]
     messages.extend(history[-20:])
@@ -108,6 +120,7 @@ def chat_with_llm(llm_client, user_text, history):
     )
     reply = response.choices[0].message.content
     history.append({"role": "assistant", "content": reply})
+    log_chat("AI", reply)
     return reply
 
 
