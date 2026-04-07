@@ -6,6 +6,7 @@ echo.
 
 set "CONDA_DIR=%USERPROFILE%\miniconda3"
 set "ENV_NAME=voice-chat"
+set "SCRIPT_DIR=%~dp0"
 
 REM ========== 1. Activate conda env ==========
 echo [1/3] Activating conda env %ENV_NAME%...
@@ -20,53 +21,53 @@ if %errorlevel% neq 0 (
 )
 
 REM ========== 2. Find CosyVoice source ==========
-echo [2/3] Looking for CosyVoice source...
+echo [2/3] Looking for CosyVoice source in %SCRIPT_DIR% ...
 
-REM Try common folder names
-if exist "%~dp0CosyVoice\setup.py" (
-    set "COSY_DIR=%~dp0CosyVoice"
-    goto cosy_found
-)
-if exist "%~dp0CosyVoice2\setup.py" (
-    set "COSY_DIR=%~dp0CosyVoice2"
-    goto cosy_found
-)
-if exist "%~dp0cosyvoice\setup.py" (
-    set "COSY_DIR=%~dp0cosyvoice"
-    goto cosy_found
-)
+set "COSY_DIR="
 
-REM Search for setup.py containing cosyvoice in subdirectories
-for /d %%D in ("%~dp0*") do (
-    if exist "%%D\setup.py" (
-        findstr /I /C:"cosyvoice" "%%D\setup.py" >nul 2>&1
-        if %errorlevel% equ 0 (
-            set "COSY_DIR=%%D"
-            goto cosy_found
-        )
-    )
+if exist "%SCRIPT_DIR%CosyVoice\setup.py" set "COSY_DIR=%SCRIPT_DIR%CosyVoice"
+if exist "%SCRIPT_DIR%CosyVoice2\setup.py" set "COSY_DIR=%SCRIPT_DIR%CosyVoice2"
+if exist "%SCRIPT_DIR%cosyvoice\setup.py" set "COSY_DIR=%SCRIPT_DIR%cosyvoice"
+if exist "%SCRIPT_DIR%cosyvoice2\setup.py" set "COSY_DIR=%SCRIPT_DIR%cosyvoice2"
+if exist "%SCRIPT_DIR%CosyVoice-main\setup.py" set "COSY_DIR=%SCRIPT_DIR%CosyVoice-main"
+if exist "%SCRIPT_DIR%CosyVoice2-main\setup.py" set "COSY_DIR=%SCRIPT_DIR%CosyVoice2-main"
+
+REM Also check for pyproject.toml if no setup.py
+if not defined COSY_DIR (
+    if exist "%SCRIPT_DIR%CosyVoice\pyproject.toml" set "COSY_DIR=%SCRIPT_DIR%CosyVoice"
+    if exist "%SCRIPT_DIR%CosyVoice2\pyproject.toml" set "COSY_DIR=%SCRIPT_DIR%CosyVoice2"
+    if exist "%SCRIPT_DIR%cosyvoice\pyproject.toml" set "COSY_DIR=%SCRIPT_DIR%cosyvoice"
+    if exist "%SCRIPT_DIR%cosyvoice2\pyproject.toml" set "COSY_DIR=%SCRIPT_DIR%cosyvoice2"
+    if exist "%SCRIPT_DIR%CosyVoice-main\pyproject.toml" set "COSY_DIR=%SCRIPT_DIR%CosyVoice-main"
+    if exist "%SCRIPT_DIR%CosyVoice2-main\pyproject.toml" set "COSY_DIR=%SCRIPT_DIR%CosyVoice2-main"
 )
 
-echo [ERROR] CosyVoice source not found in this folder.
-echo Please put CosyVoice source code in a subfolder like:
-echo   %~dp0CosyVoice\
-pause
-exit /b 1
+if not defined COSY_DIR (
+    echo [ERROR] CosyVoice source not found!
+    echo.
+    echo Please put CosyVoice source folder here:
+    echo   %SCRIPT_DIR%
+    echo.
+    echo Expected folder names: CosyVoice, CosyVoice2, cosyvoice, CosyVoice-main, etc.
+    echo The folder should contain setup.py or pyproject.toml
+    echo.
+    echo Current subfolders:
+    dir /b /ad "%SCRIPT_DIR%"
+    pause
+    exit /b 1
+)
 
-:cosy_found
 echo Found CosyVoice at: %COSY_DIR%
 
 REM ========== 3. Install CosyVoice ==========
 echo [3/3] Installing CosyVoice from source...
 cd /d "%COSY_DIR%"
 
-REM Install dependencies if requirements exist
 if exist "requirements.txt" (
     echo Installing CosyVoice requirements...
     pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 )
 
-REM Install in editable mode
 pip install -e . -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 if %errorlevel% neq 0 (
