@@ -41,6 +41,19 @@ set "CONDA_EXE=!CONDA_DIR!\Scripts\conda.exe"
 REM Add conda to PATH for this session
 set "PATH=!CONDA_DIR!;!CONDA_DIR!\Scripts;!CONDA_DIR!\Library\bin;!CONDA_DIR!\condabin;!PATH!"
 
+REM Check if conda is in system PATH permanently, if not, add it
+echo !PATH! | findstr /I /C:"miniconda3\Scripts" >nul 2>&1
+if !errorlevel! neq 0 (
+    echo Adding conda to system PATH permanently...
+    for /f "tokens=2*" %%A in ('reg query "HKCU\Environment" /v Path 2^>nul') do set "USER_PATH=%%B"
+    if defined USER_PATH (
+        reg add "HKCU\Environment" /v Path /t REG_EXPAND_SZ /d "!USER_PATH!;!CONDA_DIR!;!CONDA_DIR!\Scripts;!CONDA_DIR!\condabin" /f
+    ) else (
+        reg add "HKCU\Environment" /v Path /t REG_EXPAND_SZ /d "!CONDA_DIR!;!CONDA_DIR!\Scripts;!CONDA_DIR!\condabin" /f
+    )
+    echo Conda added to user PATH. New terminals will have conda available.
+)
+
 REM Verify conda works
 call "!CONDA_EXE!" --version
 if !errorlevel! neq 0 (
