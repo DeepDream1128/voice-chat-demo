@@ -17,8 +17,8 @@ if %errorlevel% equ 0 (
     if exist "%CONDA_DIR%\Scripts\conda.exe" (
         echo [1/5] Miniconda found at %CONDA_DIR%, skip download
     ) else (
-        echo [1/5] Downloading Miniconda...
-        curl -L -o %INSTALLER% https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe
+        echo [1/5] Downloading Miniconda (tsinghua mirror)...
+        curl -L -o %INSTALLER% https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda3-latest-Windows-x86_64.exe
         if %errorlevel% neq 0 (
             echo [ERROR] Download failed, check your network
             pause
