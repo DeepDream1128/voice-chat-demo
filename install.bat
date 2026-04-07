@@ -44,6 +44,12 @@ if %errorlevel% neq 0 (
     set "PATH=%CONDA_DIR%;%CONDA_DIR%\Scripts;%CONDA_DIR%\Library\bin;%PATH%"
 )
 
+REM ========== Set Tsinghua mirror for conda ==========
+echo Setting conda mirror (tsinghua)...
+call conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
+call conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free
+call conda config --set show_channel_urls yes
+
 REM ========== 2. Create Python 3.11 conda env ==========
 echo [2/5] Creating conda env (%ENV_NAME%, Python 3.11)...
 call conda env list | findstr /C:"%ENV_NAME%" >nul 2>&1
@@ -63,7 +69,7 @@ pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 REM ========== 4. Install dependencies ==========
 echo [4/5] Installing project dependencies...
-pip install -r requirements.txt
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 REM ========== 5. editdistance fallback ==========
 echo [5/5] Installing editdistance...
